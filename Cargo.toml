@@ -1,0 +1,15 @@
+[package]
+name = "immutable-json"
+version = "1.0.0"
+edition = "2024"
+description = "Immutable JSON transformations"
+homepage = "https://github.com/wdonne/immutable-json"
+repository = "https://github.com/wdonne/immutable-json"
+license = "BSD-2-Clause"
+readme = "README.md"
+keywords = ["kubernetes", "operator"]
+exclude = ["*.iml"]
+
+[dependencies]
+imbl = "6.1.0"
+serde_json = "1.0.148"
