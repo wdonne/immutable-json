@@ -1,11 +1,14 @@
+use crate::api::Number::{Decimal, Integer};
 use crate::api::{Number, Value};
 use crate::array::Array;
-use imbl::HashMap;
 use imbl::hashmap::Iter;
 use imbl::shared_ptr::DefaultSharedPtr;
-use crate::api::Number::{Decimal, Integer};
+use imbl::HashMap;
+use std::fmt::{Debug, Display, Formatter};
+use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Debug)]
+/// Represents a JSON object.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Object {
     map: HashMap<String, Value>,
 }
@@ -16,15 +19,54 @@ impl Default for Object {
     }
 }
 
+impl Display for Object {
+    /// Converts a JSON object to a string.
+    /// ```rust
+    /// # use immutable_json::api::Value;
+    /// # use immutable_json::error::Error;
+    /// # use std::str::FromStr;
+    /// # fn main() -> Result<(), Error>{
+    ///let data = r#"
+    ///    {
+    ///        "string": "string",
+    ///        "int": 43,
+    ///        "float": 5.8,
+    ///        "boolean": true,
+    ///        "object": {"test": "test"},
+    ///        "array": [
+    ///            "string",
+    ///            1,
+    ///            3.0,
+    ///            false,
+    ///            {"test": "test"},
+    ///            [1]
+    ///        ]
+    ///    }"#;
+    ///
+    ///let v: serde_json::Value = serde_json::from_str(data)?;
+    ///
+    ///assert_eq!(Some(v), serde_json::from_str(&Value::from_str(data)?.to_string()).ok());
+    /// #   Ok(())
+    /// # }
+    /// ```
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&Value::Object(self.clone()), f)
+    }
+}
+
 impl FromIterator<(String, Value)> for Object {
+    /// Iterates over the key/value pairs of a JSON object.
     fn from_iter<T: IntoIterator<Item = (String, Value)>>(iter: T) -> Self {
-        let mut result = Object::new();
+        iter.into_iter().fold(Self::new(), |o, (k, v)| o.add(&k, &v))
+    }
+}
 
-        for i in iter {
-            result = result.add(&i.0, i.1);
-        }
-
-        result
+impl Hash for Object {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.map.iter().for_each(|(k, v)| {
+            k.hash(state);
+            v.hash(state)
+        })
     }
 }
 
@@ -37,12 +79,6 @@ impl<'a> IntoIterator for &'a Object {
     }
 }
 
-impl PartialEq for Object {
-    fn eq(&self, other: &Self) -> bool {
-        self.map == other.map
-    }
-}
-
 impl Object {
     /// Adds a field to an object.
     /// ```rust
@@ -50,14 +86,14 @@ impl Object {
     /// # use immutable_json::object::Object;
     /// # fn main() {
     /// assert_eq!(Some("test".to_string()),
-    ///     Object::new().add("test", String("test".to_string())).get_string("test"));
+    ///     Object::new().add("test", &String("test".to_string())).get_string("test"));
     /// # }
     /// ```
-    pub fn add(&self, key: &str, value: Value) -> Self {
+    pub fn add(&self, key: &str, value: &Value) -> Self {
         let mut new_map = self.map.clone();
 
-        new_map.insert(key.to_string(), value);
-        Object { map: new_map }
+        new_map.insert(key.to_string(), value.clone());
+        Self { map: new_map }
     }
 
     /// Adds a field to an object as an array.
@@ -67,12 +103,12 @@ impl Object {
     /// # fn main() {
     /// assert_eq!(Some(1),
     ///     Object::new()
-    ///         .add_array("test", Array::new().add_integer(1))
+    ///         .add_array("test", &Array::new().add_integer(1))
     ///         .get_array("test").and_then(|a| a.get_integer(0).ok()?));
     /// # }
     /// ```
-    pub fn add_array(&self, key: &str, value: Array) -> Self {
-        self.add(key, Value::Array(value))
+    pub fn add_array(&self, key: &str, value: &Array) -> Self {
+        self.add(key, &Value::Array(value.clone()))
     }
 
     /// Adds a field to an object as a bool.
@@ -83,7 +119,7 @@ impl Object {
     /// # }
     /// ```
     pub fn add_bool(&self, key: &str, value: bool) -> Self {
-        self.add(key, Value::Bool(value))
+        self.add(key, &Value::Bool(value))
     }
 
     /// Adds a field to an object as a decimal.
@@ -94,7 +130,7 @@ impl Object {
     /// # }
     /// ```
     pub fn add_decimal(&self, key: &str, value: f64) -> Self {
-        self.add(key, Value::Number(Decimal(value)))
+        self.add(key, &Value::Number(Decimal(value)))
     }
 
     /// Adds a field to an object as an integer.
@@ -105,7 +141,7 @@ impl Object {
     /// # }
     /// ```
     pub fn add_integer(&self, key: &str, value: i128) -> Self {
-        self.add(key, Value::Number(Integer(value)))
+        self.add(key, &Value::Number(Integer(value)))
     }
 
     /// Adds a field to an object as a number.
@@ -120,7 +156,7 @@ impl Object {
     /// # }
     /// ```
     pub fn add_number(&self, key: &str, value: Number) -> Self {
-        self.add(key, Value::Number(value))
+        self.add(key, &Value::Number(value))
     }
 
     /// Adds a field to an object as an object.
@@ -130,12 +166,12 @@ impl Object {
     /// # fn main() {
     /// assert_eq!(Some(1),
     ///     Object::new()
-    ///         .add_object("test", Object::new().add_integer("test", 1))
+    ///         .add_object("test", &Object::new().add_integer("test", 1))
     ///         .get_object("test").and_then(|o| o.get_integer("test")));
     /// # }
     /// ```
-    pub fn add_object(&self, key: &str, value: Object) -> Self {
-        self.add(key, Value::Object(value))
+    pub fn add_object(&self, key: &str, value: &Object) -> Self {
+        self.add(key, &Value::Object(value.clone()))
     }
 
     /// Adds a field to an object as an integer.
@@ -147,7 +183,7 @@ impl Object {
     /// # }
     /// ```
     pub fn add_string(&self, key: &str, value: &str) -> Self {
-        self.add(key, Value::String(value.to_string()))
+        self.add(key, &Value::String(value.to_string()))
     }
 
     /// Returns a value from the object if it exists at the given key.
@@ -165,12 +201,13 @@ impl Object {
     }
 
     /// Returns a value from the object if it exists at the given key and if it is an array.
+    /// Otherwise, `None` is returned.
     /// ```rust
     /// # use immutable_json::array::Array;
     /// # use immutable_json::object::Object;
     /// # fn main() {
     /// let object = Object::new()
-    ///     .add_array("test1", Array::new().add_integer(3))
+    ///     .add_array("test1", &Array::new().add_integer(3))
     ///     .add_integer("test2", 3);
     ///
     /// assert_eq!(Some(3), object.get_array("test1").and_then(|a| a.get_integer(0).ok()?));
@@ -182,6 +219,7 @@ impl Object {
     }
 
     /// Returns a value from the object if it exists at the given key and if it is a bool.
+    /// Otherwise, `None` is returned.
     /// ```rust
     /// # use immutable_json::object::Object;
     /// # fn main() {
@@ -198,6 +236,7 @@ impl Object {
     }
 
     /// Returns a value from the object if it exists at the given key and if it is a decimal.
+    /// Otherwise, `None` is returned.
     /// ```rust
     /// # use immutable_json::object::Object;
     /// # fn main() {
@@ -214,6 +253,7 @@ impl Object {
     }
 
     /// Returns a value from the object if it exists at the given key and if it is an integer.
+    /// Otherwise, `None` is returned.
     /// ```rust
     /// # use immutable_json::object::Object;
     /// # fn main() {
@@ -230,6 +270,7 @@ impl Object {
     }
 
     /// Returns a value from the object if it exists at the given key and if it is a number.
+    /// Otherwise, `None` is returned.
     /// ```rust
     /// # use immutable_json::api::Number;
     /// # use immutable_json::object::Object;
@@ -247,11 +288,12 @@ impl Object {
     }
 
     /// Returns a value from the object if it exists at the given key and if it is an object.
+    /// Otherwise, `None` is returned.
     /// ```rust
     /// # use immutable_json::object::Object;
     /// # fn main() {
     /// let object = Object::new()
-    ///     .add_object("test1", Object::new().add_integer("test", 3))
+    ///     .add_object("test1", &Object::new().add_integer("test", 3))
     ///     .add_integer("test2", 3);
     ///
     /// assert_eq!(Some(3), object.get_object("test1").and_then(|a| a.get_integer("test")));
@@ -263,6 +305,7 @@ impl Object {
     }
 
     /// Returns a value from the object if it exists at the given key and if it is a string.
+    /// Otherwise, `None` is returned.
     /// ```rust
     /// # use immutable_json::object::Object;
     /// # fn main() {
@@ -307,8 +350,9 @@ impl Object {
         }
     }
 
+    /// Create an empty JSON object.
     pub fn new() -> Self {
-        Object {
+        Self {
             map: HashMap::new(),
         }
     }
@@ -327,7 +371,7 @@ impl Object {
         let mut new_map = self.map.clone();
 
         new_map.remove(&key.to_string());
-        Object { map: new_map }
+        Self { map: new_map }
     }
 }
 

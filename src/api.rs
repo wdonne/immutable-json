@@ -1,15 +1,20 @@
 use crate::array::Array;
+use crate::error::Error;
 use crate::object::Object;
+use crate::serde::{from_value, to_value};
+use std::fmt::Display;
+use std::hash::{Hash, Hasher};
+use std::str::FromStr;
 
 /// A JSON number.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Number {
     Decimal(f64),
     Integer(i128),
 }
 
 /// A JSON value.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq)]
 pub enum Value {
     Array(Array),
     Bool(bool),
@@ -19,11 +24,23 @@ pub enum Value {
     String(String),
 }
 
+impl Eq for Number {}
+
+impl Hash for Number {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Number::Decimal(v) => v.to_string().hash(state),
+            Number::Integer(v) => state.write_i128(*v),
+        }
+    }
+}
+
 impl PartialEq for Number {
     fn eq(&self, other: &Self) -> bool {
-        match self {
-            Number::Decimal(n) => Some(n) == other.as_decimal().as_ref(),
-            Number::Integer(n) => Some(n) == other.as_integer().as_ref(),
+        match (self, other) {
+            (Number::Decimal(s), Number::Decimal(o)) => s == o,
+            (Number::Integer(s), Number::Integer(o)) => s == o,
+            _ => false,
         }
     }
 }
@@ -65,91 +82,157 @@ impl PartialEq for Value {
     }
 }
 
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            to_value(self).map_or("".to_string(), |v| v.to_string())
+        )
+    }
+}
+
+impl FromStr for Value {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let v: serde_json::Value = serde_json::from_str(s)?;
+
+        match from_value(&v) {
+            Some(c) => Ok(c),
+            None => Err(Error::ConvertFrom),
+        }
+    }
+}
+
+impl Hash for Value {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Value::Array(v) => v.hash(state),
+            Value::Bool(v) => v.hash(state),
+            Value::Null => state.write_u8(0),
+            Value::Number(v) => v.hash(state),
+            Value::Object(v) => v.hash(state),
+            Value::String(v) => v.hash(state),
+        }
+    }
+}
+
+impl TryFrom<serde_json::Value> for Value {
+    type Error = Error;
+
+    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
+        match from_value(&value) {
+            Some(v) => Ok(v),
+            None => Err(Error::ConvertFrom),
+        }
+    }
+}
+
+impl TryFrom<Value> for serde_json::Value {
+    type Error = Error;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match to_value(&value) {
+            Some(v) => Ok(v),
+            None => Err(Error::ConvertTo),
+        }
+    }
+}
+
 impl Value {
     pub fn as_array(&self) -> Option<Array> {
         match self {
-            Value::Array(a) => Some(a.clone()),
+            Self::Array(a) => Some(a.clone()),
             _ => None,
         }
     }
 
     pub fn as_bool(&self) -> Option<bool> {
         match self {
-            Value::Bool(b) => Some(*b),
+            Self::Bool(b) => Some(*b),
             _ => None,
         }
     }
 
     pub fn as_decimal(&self) -> Option<f64> {
         match self {
-            Value::Number(n) => Number::as_decimal(n),
+            Self::Number(n) => Number::as_decimal(n),
             _ => None,
         }
     }
 
     pub fn as_integer(&self) -> Option<i128> {
         match self {
-            Value::Number(n) => Number::as_integer(n),
+            Self::Number(n) => Number::as_integer(n),
             _ => None,
         }
     }
 
     pub fn as_number(&self) -> Option<Number> {
         match self {
-            Value::Number(n) => Some(n.clone()),
+            Self::Number(n) => Some(n.clone()),
             _ => None,
         }
     }
 
     pub fn as_object(&self) -> Option<Object> {
         match self {
-            Value::Object(o) => Some(o.clone()),
+            Self::Object(o) => Some(o.clone()),
             _ => None,
         }
     }
 
     pub fn as_string(&self) -> Option<String> {
         match self {
-            Value::String(s) => Some(s.clone()),
+            Self::String(s) => Some(s.clone()),
             _ => None,
         }
     }
 
     pub fn is_array(&self) -> bool {
-        matches!(self, Value::Array(_))
+        matches!(self, Self::Array(_))
     }
 
     pub fn is_bool(&self) -> bool {
-        matches!(self, Value::Bool(_))
+        matches!(self, Self::Bool(_))
     }
 
     pub fn is_decimal(&self) -> bool {
         match self {
-            Value::Number(n) => Number::is_decimal(n),
+            Self::Number(n) => Number::is_decimal(n),
             _ => false,
         }
     }
 
     pub fn is_integer(&self) -> bool {
         match self {
-            Value::Number(n) => Number::is_integer(n),
+            Self::Number(n) => Number::is_integer(n),
             _ => false,
         }
     }
 
     pub fn is_null(&self) -> bool {
-        matches!(self, Value::Null)
+        matches!(self, Self::Null)
     }
 
     pub fn is_number(&self) -> bool {
-        matches!(self, Value::Number(_))
+        matches!(self, Self::Number(_))
     }
 
     pub fn is_object(&self) -> bool {
-        matches!(self, Value::Object(_))
+        matches!(self, Self::Object(_))
+    }
+
+    pub fn is_scalar(&self) -> bool {
+        self.is_null() || self.is_bool() || self.is_number() || self.is_string()
     }
 
     pub fn is_string(&self) -> bool {
-        matches!(self, Value::String(_))
+        matches!(self, Self::String(_))
+    }
+
+    pub fn is_structure(&self) -> bool {
+        self.is_array() || self.is_object()
     }
 }
