@@ -1,4 +1,6 @@
+#[cfg(feature = "patch")]
 use crate::api::Value;
+#[cfg(feature = "patch")]
 use crate::array::Array;
 #[cfg(feature = "jaq")]
 use jaq_core::compile::Errors;
@@ -6,6 +8,7 @@ use jaq_core::compile::Errors;
 use jaq_core::load::File;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+#[cfg(feature = "patch")]
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -46,6 +49,7 @@ impl Display for Error {
             #[cfg(feature = "jaq")]
             Error::JaqNoResult => write!(f, "the jq expression did not yield a result"),
             Error::JsonIndex(i) => write!(f, "{}", i),
+            #[cfg(feature = "patch")]
             Error::JsonPatch(p) => write!(f, "{}", p),
             Error::JsonPointer(p) => write!(f, "malformed JSON pointer {}", p),
             Error::SerdeJson(s) => write!(f, "{}", s),

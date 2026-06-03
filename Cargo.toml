@@ -1,6 +1,6 @@
 [package]
 name = "immutable-json"
-version = "1.1.0"
+version = "1.1.1"
 edition = "2024"
 description = "Immutable JSON transformations"
 homepage = "https://github.com/wdonne/immutable-json"
@@ -12,13 +12,13 @@ exclude = ["*.iml"]
 
 [dependencies]
 imbl = "7.0.0"
-serde_json = "1.0.149"
+serde_json = "1.0.150"
 take-until = "0.2.0"
 bytes = { version = "1.11.1", optional = true }
 jaq-core = { version = "3.0.0", optional = true }
 jaq-std = {  version = "3.0.0", optional = true }
 jaq-json = { version = "2.0.0", optional = true }
-json-patch = { version = "4.1.0", optional = true }
+json-patch = { version = "4.2.0", optional = true }
 
 [features]
 jaq = ["dep:bytes", "dep:jaq-core", "dep:jaq-std", "dep:jaq-json"]
