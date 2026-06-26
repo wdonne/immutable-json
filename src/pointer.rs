@@ -3,7 +3,6 @@ use crate::api::{Number, Value};
 use crate::array::Array;
 use crate::error::Error;
 use crate::object::Object;
-use crate::util::{push_back, remove_first, remove_last};
 use imbl::{Vector, vector};
 use std::cmp::Ordering;
 use std::cmp::Ordering::{Equal, Greater, Less};
@@ -25,15 +24,17 @@ impl Default for JsonPointer {
 }
 
 impl Display for JsonPointer {
-    /// Convert a JSON pointer to a string.
-    /// ```rust
-    /// # use immutable_json::pointer::JsonPointer;
-    /// # use std::str::FromStr;
-    /// # fn main() {
-    ///let p = "/a/b~1c/~0d";
-    ///
-    ///assert_eq!(p, JsonPointer::from_str(p).unwrap().to_string())
-    /// # }
+    /**
+    Convert a JSON pointer to a string.
+    ```rust
+    # use immutable_json::pointer::JsonPointer;
+    # use std::str::FromStr;
+    # fn main() {
+    let p = "/a/b~1c/~0d";
+
+    assert_eq!(p, JsonPointer::from_str(p).unwrap().to_string())
+    # }
+    */
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -64,7 +65,7 @@ impl FromStr for JsonPointer {
                     .filter(|segment| !segment.is_empty())
                     .map(unescape)
                     .fold(Vector::new(), |v, segment| {
-                        push_back(&v, segment.to_string())
+                        imbl_util::vector::push_back(&v, segment.to_string())
                     }),
             })
         }
@@ -72,19 +73,21 @@ impl FromStr for JsonPointer {
 }
 
 impl Ord for JsonPointer {
-    /// The comparison takes into account array indexes, which are compared numerically.
-    /// ```rust
-    /// # use immutable_json::pointer::JsonPointer;
-    /// # use std::str::FromStr;
-    /// # fn main() {
-    ///assert!(JsonPointer::from_str("/a").unwrap() == JsonPointer::from_str("/a").unwrap());
-    ///assert!(JsonPointer::from_str("/a/b").unwrap() < JsonPointer::from_str("/a/c").unwrap());
-    ///assert!(JsonPointer::from_str("/a/b/0").unwrap() < JsonPointer::from_str("/a/b/1").unwrap());
-    ///assert!(JsonPointer::from_str("/a/b/10").unwrap() > JsonPointer::from_str("/a/b/2").unwrap());
-    ///assert!(JsonPointer::from_str("/a/b/-").unwrap() > JsonPointer::from_str("/a/b/2").unwrap());
-    ///assert!(JsonPointer::from_str("/a/b/1").unwrap() < JsonPointer::from_str("/a/b/-").unwrap())
-    /// # }
-    /// ```
+    /**
+    The comparison takes into account array indexes, which are compared numerically.
+    ```rust
+    # use immutable_json::pointer::JsonPointer;
+    # use std::str::FromStr;
+    # fn main() {
+    assert!(JsonPointer::from_str("/a").unwrap() == JsonPointer::from_str("/a").unwrap());
+    assert!(JsonPointer::from_str("/a/b").unwrap() < JsonPointer::from_str("/a/c").unwrap());
+    assert!(JsonPointer::from_str("/a/b/0").unwrap() < JsonPointer::from_str("/a/b/1").unwrap());
+    assert!(JsonPointer::from_str("/a/b/10").unwrap() > JsonPointer::from_str("/a/b/2").unwrap());
+    assert!(JsonPointer::from_str("/a/b/-").unwrap() > JsonPointer::from_str("/a/b/2").unwrap());
+    assert!(JsonPointer::from_str("/a/b/1").unwrap() < JsonPointer::from_str("/a/b/-").unwrap())
+    # }
+    ```
+    */
     fn cmp(&self, other: &Self) -> Ordering {
         match zip(self.path.iter(), other.path.iter())
             .map(|(s1, s2)| Self::cmp_segment(s1, s2))
@@ -106,51 +109,53 @@ impl PartialOrd for JsonPointer {
 }
 
 impl JsonPointer {
-    /// Add a value to a JSON object or array at the location specified by the JSON pointer.
-    /// ```rust
-    /// # use immutable_json::api::Number::Integer;
-    /// # use immutable_json::api::Value;
-    /// # use immutable_json::error::Error;
-    /// # use immutable_json::object::Object;
-    /// # use immutable_json::pointer::JsonPointer;
-    /// # use std::str::FromStr;
-    /// # fn main() -> Result<(), Error>{
-    ///let data = r#"
-    ///    [
-    ///        "string",
-    ///        {"test": "test"},
-    ///        ["string"]
-    ///    ]"#;
-    ///let array = Value::from_str(data)?.as_array().unwrap();
-    ///
-    ///assert_eq!(array.insert_string(0, "string2").ok().map(|a| Value::Array(a)),
-    ///    JsonPointer::from_str("/0")
-    ///        .ok()
-    ///        .and_then(|p| {
-    ///            p.add(&Value::Array(array.clone()), &Value::String("string2".to_string()))
-    ///        }));
-    ///assert_eq!(None,
-    ///    JsonPointer::from_str("/4")
-    ///        .ok()
-    ///        .and_then(|p| {
-    ///            p.add(&Value::Array(array.clone()), &Value::String("string2".to_string()))
-    ///        }));
-    ///assert_eq!(array.insert_integer(3, 0).ok().map(|a| Value::Array(a)),
-    ///    JsonPointer::from_str("/-")
-    ///        .ok()
-    ///        .and_then(|p| p.add(&Value::Array(array.clone()), &Value::Number(Integer(0)))));
-    ///assert_eq!(array.set_object(
-    ///        1,
-    ///        &Object::new().add_string("test", "test").add_string("test2", "test2")
-    ///    ).ok().map(|a| Value::Array(a)),
-    ///    JsonPointer::from_str("/1/test2")
-    ///        .ok()
-    ///        .and_then(|p| {
-    ///            p.add(&Value::Array(array.clone()), &Value::String("test2".to_string()))
-    ///        }));
-    /// #   Ok(())
-    /// # }
-    /// ```
+    /**
+    Add a value to a JSON object or array at the location specified by the JSON pointer.
+    ```rust
+    # use immutable_json::api::Number::Integer;
+    # use immutable_json::api::Value;
+    # use immutable_json::error::Error;
+    # use immutable_json::object::Object;
+    # use immutable_json::pointer::JsonPointer;
+    # use std::str::FromStr;
+    # fn main() -> Result<(), Error>{
+    let data = r#"
+       [
+           "string",
+           {"test": "test"},
+           ["string"]
+       ]"#;
+    let array = Value::from_str(data)?.as_array().unwrap();
+
+    assert_eq!(array.insert_string(0, "string2").ok().map(|a| Value::Array(a)),
+       JsonPointer::from_str("/0")
+           .ok()
+           .and_then(|p| {
+               p.add(&Value::Array(array.clone()), &Value::String("string2".to_string()))
+           }));
+    assert_eq!(None,
+       JsonPointer::from_str("/4")
+           .ok()
+           .and_then(|p| {
+               p.add(&Value::Array(array.clone()), &Value::String("string2".to_string()))
+           }));
+    assert_eq!(array.insert_integer(3, 0).ok().map(|a| Value::Array(a)),
+       JsonPointer::from_str("/-")
+           .ok()
+           .and_then(|p| p.add(&Value::Array(array.clone()), &Value::Number(Integer(0)))));
+    assert_eq!(array.set_object(
+           1,
+           &Object::new().add_string("test", "test").add_string("test2", "test2")
+       ).ok().map(|a| Value::Array(a)),
+       JsonPointer::from_str("/1/test2")
+           .ok()
+           .and_then(|p| {
+               p.add(&Value::Array(array.clone()), &Value::String("test2".to_string()))
+           }));
+    #   Ok(())
+    # }
+    ```
+    */
     pub fn add(&self, target: &Value, value: &Value) -> Option<Value> {
         self.modify(target, |v, key| match v {
             Value::Array(a) => usize::from_str(key)
@@ -192,7 +197,7 @@ impl JsonPointer {
         Self::add_pointer(pointer, target, &Value::Object(value.clone()))
     }
 
-    fn add_pointer(pointer: &str, target: &Value, value: &Value) -> Option<Value> {
+    pub(crate) fn add_pointer(pointer: &str, target: &Value, value: &Value) -> Option<Value> {
         Self::from_str(pointer)
             .ok()
             .and_then(|p| p.add(target, value))
@@ -215,7 +220,7 @@ impl JsonPointer {
     /// Returns a JSON pointer with an extra path segment.
     pub fn child(&self, segment: &str) -> Self {
         Self {
-            path: push_back(&self.path, segment.to_string()),
+            path: imbl_util::vector::push_back(&self.path, segment.to_string()),
         }
     }
 
@@ -240,48 +245,50 @@ impl JsonPointer {
             .unwrap_or_else(|| s1.cmp(s2))
     }
 
-    /// Get a value from a JSON object or array through a JSON pointer.
-    /// ```rust
-    /// # use immutable_json::api::Value;
-    /// # use immutable_json::error::Error;
-    /// # use immutable_json::pointer::JsonPointer;
-    /// # use std::str::FromStr;
-    /// # fn main() -> Result<(), Error>{
-    ///let data = r#"
-    ///    {
-    ///        "string": "string",
-    ///        "int": 43,
-    ///        "float": 5.8,
-    ///        "boolean": true,
-    ///        "object": {"test": "test"},
-    ///        "array": [
-    ///            "string",
-    ///            1,
-    ///            3.0,
-    ///            false,
-    ///            {"test": "test"},
-    ///            [1]
-    ///        ],
-    ///        "es/cape": true
-    ///    }"#;
-    ///let object = Value::from_str(data)?;
-    ///
-    ///assert_eq!(Some(Value::String("string".to_string())),
-    ///    JsonPointer::from_str("/string").ok().and_then(|p| p.get(&object)));
-    ///assert_eq!(Some(Value::String("test".to_string())),
-    ///    JsonPointer::from_str("/object/test").ok().and_then(|p| p.get(&object)));
-    ///assert_eq!(None, JsonPointer::from_str("/object/test2").ok().and_then(|p| p.get(&object)));
-    ///assert_eq!(None, JsonPointer::from_str("/object2/test").ok().and_then(|p| p.get(&object)));
-    ///assert_eq!(Some(Value::String("test".to_string())),
-    ///    JsonPointer::from_str("/array/4/test").ok().and_then(|p| p.get(&object)));
-    ///assert_eq!(None, JsonPointer::from_str("/array/3/test").ok().and_then(|p| p.get(&object)));
-    ///assert_eq!(None, JsonPointer::from_str("/array2/4/test").ok().and_then(|p| p.get(&object)));
-    ///assert_eq!(Some(Value::Bool(true)),
-    ///    JsonPointer::from_str("/es~1cape").ok().and_then(|p| p.get(&object)));
-    ///assert_eq!(Some(object.clone()), JsonPointer::from_str("/").ok().and_then(|p| p.get(&object)));
-    /// #   Ok(())
-    /// # }
-    /// ```
+    /**
+    Get a value from a JSON object or array through a JSON pointer.
+    ```rust
+    # use immutable_json::api::Value;
+    # use immutable_json::error::Error;
+    # use immutable_json::pointer::JsonPointer;
+    # use std::str::FromStr;
+    # fn main() -> Result<(), Error>{
+    let data = r#"
+       {
+           "string": "string",
+           "int": 43,
+           "float": 5.8,
+           "boolean": true,
+           "object": {"test": "test"},
+           "array": [
+               "string",
+               1,
+               3.0,
+               false,
+               {"test": "test"},
+               [1]
+           ],
+           "es/cape": true
+       }"#;
+    let object = Value::from_str(data)?;
+
+    assert_eq!(Some(Value::String("string".to_string())),
+       JsonPointer::from_str("/string").ok().and_then(|p| p.get(&object)));
+    assert_eq!(Some(Value::String("test".to_string())),
+       JsonPointer::from_str("/object/test").ok().and_then(|p| p.get(&object)));
+    assert_eq!(None, JsonPointer::from_str("/object/test2").ok().and_then(|p| p.get(&object)));
+    assert_eq!(None, JsonPointer::from_str("/object2/test").ok().and_then(|p| p.get(&object)));
+    assert_eq!(Some(Value::String("test".to_string())),
+       JsonPointer::from_str("/array/4/test").ok().and_then(|p| p.get(&object)));
+    assert_eq!(None, JsonPointer::from_str("/array/3/test").ok().and_then(|p| p.get(&object)));
+    assert_eq!(None, JsonPointer::from_str("/array2/4/test").ok().and_then(|p| p.get(&object)));
+    assert_eq!(Some(Value::Bool(true)),
+       JsonPointer::from_str("/es~1cape").ok().and_then(|p| p.get(&object)));
+    assert_eq!(Some(object.clone()), JsonPointer::from_str("/").ok().and_then(|p| p.get(&object)));
+    #   Ok(())
+    # }
+    ```
+    */
     pub fn get(&self, target: &Value) -> Option<Value> {
         match target {
             Value::Array(a) => self.get_from_array(a),
@@ -346,7 +353,7 @@ impl JsonPointer {
         Self::get_pointer(pointer, target).and_then(|v| v.as_object())
     }
 
-    fn get_pointer(pointer: &str, target: &Value) -> Option<Value> {
+    pub(crate) fn get_pointer(pointer: &str, target: &Value) -> Option<Value> {
         Self::from_str(pointer).ok().and_then(|p| p.get(target))
     }
 
@@ -413,7 +420,7 @@ impl JsonPointer {
             None
         } else {
             Some(Self {
-                path: remove_first(&self.path),
+                path: imbl_util::vector::pop_front(&self.path).0,
             })
         }
     }
@@ -432,43 +439,45 @@ impl JsonPointer {
     /// Returns a JSON pointer that refers to the parent.
     pub fn parent(&self) -> Self {
         Self {
-            path: remove_last(&self.path),
+            path: imbl_util::vector::pop_back(&self.path).0,
         }
     }
 
-    /// Remove a value in a JSON object or array at the location specified by the JSON pointer.
-    /// ```rust
-    /// # use immutable_json::api::Number;
-    /// # use immutable_json::api::Value;
-    /// # use immutable_json::error::Error;
-    /// # use immutable_json::object::Object;
-    /// # use immutable_json::pointer::JsonPointer;
-    /// # use std::str::FromStr;
-    /// # fn main() -> Result<(), Error>{
-    ///let data = r#"
-    ///    [
-    ///        "string",
-    ///        {"test": "test", "test2": "test2"},
-    ///        ["string"]
-    ///    ]"#;
-    ///let array = Value::from_str(data)?.as_array().unwrap();
-    ///
-    ///assert_eq!(array.remove(0).ok().map(|a| Value::Array(a)),
-    ///    JsonPointer::from_str("/0")
-    ///        .ok()
-    ///        .and_then(|p| p.remove(&Value::Array(array.clone()))));
-    ///assert_eq!(None,
-    ///    JsonPointer::from_str("/4")
-    ///        .ok()
-    ///        .and_then(|p| p.remove(&Value::Array(array.clone()))));
-    ///assert_eq!(array.set_object(1, &Object::new().add_string("test", "test"))
-    ///        .ok().map(|a| Value::Array(a)),
-    ///    JsonPointer::from_str("/1/test2")
-    ///        .ok()
-    ///        .and_then(|p| p.remove(&Value::Array(array.clone()))));
-    /// #   Ok(())
-    /// # }
-    /// ```
+    /**
+    Remove a value in a JSON object or array at the location specified by the JSON pointer.
+    ```rust
+    # use immutable_json::api::Number;
+    # use immutable_json::api::Value;
+    # use immutable_json::error::Error;
+    # use immutable_json::object::Object;
+    # use immutable_json::pointer::JsonPointer;
+    # use std::str::FromStr;
+    # fn main() -> Result<(), Error>{
+    let data = r#"
+       [
+           "string",
+           {"test": "test", "test2": "test2"},
+           ["string"]
+       ]"#;
+    let array = Value::from_str(data)?.as_array().unwrap();
+
+    assert_eq!(array.remove(0).ok().map(|a| Value::Array(a)),
+       JsonPointer::from_str("/0")
+           .ok()
+           .and_then(|p| p.remove(&Value::Array(array.clone()))));
+    assert_eq!(None,
+       JsonPointer::from_str("/4")
+           .ok()
+           .and_then(|p| p.remove(&Value::Array(array.clone()))));
+    assert_eq!(array.set_object(1, &Object::new().add_string("test", "test"))
+           .ok().map(|a| Value::Array(a)),
+       JsonPointer::from_str("/1/test2")
+           .ok()
+           .and_then(|p| p.remove(&Value::Array(array.clone()))));
+    #   Ok(())
+    # }
+    ```
+    */
     pub fn remove(&self, target: &Value) -> Option<Value> {
         self.modify(target, |v, key| match v {
             Value::Array(a) => usize::from_str(key)
@@ -479,45 +488,53 @@ impl JsonPointer {
         })
     }
 
-    /// Set a value in a JSON object or array at the location specified by the JSON pointer.
-    /// ```rust
-    /// # use immutable_json::api::Number;
-    /// # use immutable_json::api::Value;
-    /// # use immutable_json::error::Error;
-    /// # use immutable_json::object::Object;
-    /// # use immutable_json::pointer::JsonPointer;
-    /// # use std::str::FromStr;
-    /// # fn main() -> Result<(), Error>{
-    ///let data = r#"
-    ///    [
-    ///        "string",
-    ///        {"test": "test"},
-    ///        ["string"]
-    ///    ]"#;
-    ///let array = Value::from_str(data)?.as_array().unwrap();
-    ///
-    ///assert_eq!(array.set_string(0, "string2").ok().map(|a| Value::Array(a)),
-    ///    JsonPointer::from_str("/0")
-    ///        .ok()
-    ///        .and_then(|p| {
-    ///            p.set(&Value::Array(array.clone()), &Value::String("string2".to_string()))
-    ///        }));
-    ///assert_eq!(None,
-    ///    JsonPointer::from_str("/4")
-    ///        .ok()
-    ///        .and_then(|p| {
-    ///            p.set(&Value::Array(array.clone()), &Value::String("string2".to_string()))
-    ///        }));
-    ///assert_eq!(array.set_object(1, &Object::new().add_string("test", "test2"))
-    ///        .ok().map(|a| Value::Array(a)),
-    ///    JsonPointer::from_str("/1/test")
-    ///        .ok()
-    ///        .and_then(|p| {
-    ///            p.set(&Value::Array(array.clone()), &Value::String("test2".to_string()))
-    ///        }));
-    /// #   Ok(())
-    /// # }
-    /// ```
+    pub(crate) fn remove_pointer(pointer: &str, target: &Value) -> Option<Value> {
+        JsonPointer::from_str(pointer)
+            .ok()
+            .and_then(|p| p.remove(target))
+    }
+
+    /**
+    Set a value in a JSON object or array at the location specified by the JSON pointer.
+    ```rust
+    # use immutable_json::api::Number;
+    # use immutable_json::api::Value;
+    # use immutable_json::error::Error;
+    # use immutable_json::object::Object;
+    # use immutable_json::pointer::JsonPointer;
+    # use std::str::FromStr;
+    # fn main() -> Result<(), Error>{
+    let data = r#"
+       [
+           "string",
+           {"test": "test"},
+           ["string"]
+       ]"#;
+    let array = Value::from_str(data)?.as_array().unwrap();
+
+    assert_eq!(array.set_string(0, "string2").ok().map(|a| Value::Array(a)),
+       JsonPointer::from_str("/0")
+           .ok()
+           .and_then(|p| {
+               p.set(&Value::Array(array.clone()), &Value::String("string2".to_string()))
+           }));
+    assert_eq!(None,
+       JsonPointer::from_str("/4")
+           .ok()
+           .and_then(|p| {
+               p.set(&Value::Array(array.clone()), &Value::String("string2".to_string()))
+           }));
+    assert_eq!(array.set_object(1, &Object::new().add_string("test", "test2"))
+           .ok().map(|a| Value::Array(a)),
+       JsonPointer::from_str("/1/test")
+           .ok()
+           .and_then(|p| {
+               p.set(&Value::Array(array.clone()), &Value::String("test2".to_string()))
+           }));
+    #   Ok(())
+    # }
+    ```
+    */
     pub fn set(&self, target: &Value, value: &Value) -> Option<Value> {
         self.modify(target, |v, key| match v {
             Value::Array(a) => usize::from_str(key)
@@ -559,7 +576,7 @@ impl JsonPointer {
         Self::set_pointer(pointer, target, &Value::Object(value.clone()))
     }
 
-    fn set_pointer(pointer: &str, target: &Value, value: &Value) -> Option<Value> {
+    pub(crate) fn set_pointer(pointer: &str, target: &Value, value: &Value) -> Option<Value> {
         Self::from_str(pointer)
             .ok()
             .and_then(|p| p.set(target, value))

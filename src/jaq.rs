@@ -59,21 +59,23 @@ impl Filter {
         })
     }
 
-    /// Runs a compiled jq filter.
-    /// ```rust
-    /// # use immutable_json::api::Value;
-    /// # use immutable_json::error::Error;
-    /// # use immutable_json::jaq::Filter;
-    /// # use std::str::FromStr;
-    /// # fn main() -> Result<(), Error>{
-    /// let filter = Filter::compile(". + {test: \"test2\"}")?;
-    /// let source: Value = Value::from_str("{\"test\": \"test\"}")?;
-    /// let target: Value = Value::from_str("{\"test\": \"test2\"}")?;
-    ///
-    /// assert_eq!(target, filter.run(&source)?);
-    /// #   Ok(())
-    /// # }
-    /// ```
+    /**
+    Runs a compiled jq filter.
+    ```rust
+    # use immutable_json::api::Value;
+    # use immutable_json::error::Error;
+    # use immutable_json::jaq::Filter;
+    # use std::str::FromStr;
+    # fn main() -> Result<(), Error>{
+    let filter = Filter::compile(". + {test: \"test2\"}")?;
+    let source: Value = Value::from_str("{\"test\": \"test\"}")?;
+    let target: Value = Value::from_str("{\"test\": \"test2\"}")?;
+
+    assert_eq!(target, filter.run(&source)?);
+    #   Ok(())
+    # }
+    ```
+    */
     pub fn run(&self, value: &Value) -> Result<Value, Error> {
         self.expression
             .id
@@ -123,37 +125,39 @@ fn from_object(object: &Map<Val, Val>) -> Object {
     }))
 }
 
-/// Convert a jaq_json value to an immutable JSON value.
-/// ```rust
-/// # use jaq_json::Val;
-/// # use immutable_json::jaq::{from_value, to_value};
-/// # use immutable_json::api::Value;
-/// # use immutable_json::error::Error;
-/// # use std::str::FromStr;
-/// # fn main() -> Result<(), Error>{
-/// let data = r#"
-///         {
-///             "string": "string",
-///             "int": 43,
-///             "float": 5.8,
-///             "boolean": true,
-///             "object": {"test": "test"},
-///             "array": [
-///                 "string",
-///                 1,
-///                 3.0,
-///                 false,
-///                 {"test": "test"},
-///                 [1]
-///             ]
-///         }"#;
-///
-///     let v: Value = Value::from_str(data)?;
-///
-///     assert_eq!(Some(v.clone()), from_value(&to_value(&v)));
-/// #   Ok(())
-/// # }
-/// ```
+/**
+Convert a jaq_json value to an immutable JSON value.
+```rust
+# use jaq_json::Val;
+# use immutable_json::jaq::{from_value, to_value};
+# use immutable_json::api::Value;
+# use immutable_json::error::Error;
+# use std::str::FromStr;
+# fn main() -> Result<(), Error>{
+let data = r#"
+        {
+            "string": "string",
+            "int": 43,
+            "float": 5.8,
+            "boolean": true,
+            "object": {"test": "test"},
+            "array": [
+                "string",
+                1,
+                3.0,
+                false,
+                {"test": "test"},
+                [1]
+            ]
+        }"#;
+
+    let v: Value = Value::from_str(data)?;
+
+    assert_eq!(Some(v.clone()), from_value(&to_value(&v)));
+#   Ok(())
+# }
+```
+*/
 pub fn from_value(value: &Val) -> Option<Value> {
     match value {
         Val::Arr(v) => Some(Value::Array(from_array(v))),

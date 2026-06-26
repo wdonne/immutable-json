@@ -171,7 +171,7 @@ impl Value {
 
     pub fn as_number(&self) -> Option<Number> {
         match self {
-            Self::Number(n) => Some(n.clone()),
+            Self::Number(n) => Some(*n),
             _ => None,
         }
     }

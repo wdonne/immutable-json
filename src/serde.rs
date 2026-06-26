@@ -24,35 +24,37 @@ fn from_object(object: &serde_json::Map<String, serde_json::Value>) -> Object {
     )
 }
 
-/// Convert a serde_json value to an immutable JSON value.
-/// ```rust
-/// # use serde_json::Value;
-/// # use immutable_json::serde::{from_value, to_value};
-/// # use serde_json::Error;
-/// # fn main() -> Result<(), Error>{
-/// let data = r#"
-///         {
-///             "string": "string",
-///             "int": 43,
-///             "float": 5.8,
-///             "boolean": true,
-///             "object": {"test": "test"},
-///             "array": [
-///                 "string",
-///                 1,
-///                 3.0,
-///                 false,
-///                 {"test": "test"},
-///                 [1]
-///             ]
-///         }"#;
-///
-///     let v: Value = serde_json::from_str(data)?;
-///
-///     assert_eq!(Some(v.clone()), from_value(&v).and_then(|f| to_value(&f)));
-/// #   Ok(())
-/// # }
-/// ```
+/**
+Convert a serde_json value to an immutable JSON value.
+```rust
+# use serde_json::Value;
+# use immutable_json::serde::{from_value, to_value};
+# use serde_json::Error;
+# fn main() -> Result<(), Error>{
+let data = r#"
+        {
+            "string": "string",
+            "int": 43,
+            "float": 5.8,
+            "boolean": true,
+            "object": {"test": "test"},
+            "array": [
+                "string",
+                1,
+                3.0,
+                false,
+                {"test": "test"},
+                [1]
+            ]
+        }"#;
+
+    let v: Value = serde_json::from_str(data)?;
+
+    assert_eq!(Some(v.clone()), from_value(&v).and_then(|f| to_value(&f)));
+#   Ok(())
+# }
+```
+*/
 pub fn from_value(value: &serde_json::Value) -> Option<Value> {
     match value {
         serde_json::Value::Array(v) => Some(Value::Array(from_array(v))),

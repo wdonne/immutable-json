@@ -5,8 +5,8 @@ use crate::object::Object;
 use crate::serde::{from_value, to_value};
 use json_patch::jsonptr::PointerBuf;
 use json_patch::{
-    patch, AddOperation, CopyOperation, MoveOperation, Patch, PatchOperation,
-    RemoveOperation, ReplaceOperation, TestOperation,
+    AddOperation, CopyOperation, MoveOperation, Patch, PatchOperation, RemoveOperation,
+    ReplaceOperation, TestOperation, patch,
 };
 use serde_json::Value::Null;
 
@@ -75,94 +75,98 @@ fn diff(source: &Value, target: &Value) -> Array {
     ))
 }
 
-/// Generates a JSON patch that, when applied to the source, yields the target.
-/// ```rust
-/// # use immutable_json::api::Value;
-/// # use immutable_json::error::Error;
-/// # use immutable_json::patch::apply_array;
-/// # use immutable_json::patch::diff_array;
-/// # use std::str::FromStr;
-/// # fn main() -> Result<(), Error>{
-///let source = r#"
-///    [
-///        "string",
-///        1,
-///        3.0,
-///        false,
-///        {"test": "test", "obj": {"test2": "test"}},
-///        [1]
-///    ]"#;
-///let target = r#"
-///    [
-///        "string",
-///        3.0,
-///        3.0,
-///        false,
-///        {"test": "test2", "obj": {"test2": "test2"}},
-///        1,
-///        [1]
-///    ]"#;
-///
-///let s = Value::from_str(source)?.as_array().unwrap();
-///let t = Value::from_str(target)?.as_array().unwrap();
-///
-///assert_eq!(t, apply_array(&s, &diff_array(&s, &t))?);
-/// #   Ok(())
-/// # }
-/// ```
+/**
+Generates a JSON patch that, when applied to the source, yields the target.
+```rust
+# use immutable_json::api::Value;
+# use immutable_json::error::Error;
+# use immutable_json::patch::apply_array;
+# use immutable_json::patch::diff_array;
+# use std::str::FromStr;
+# fn main() -> Result<(), Error>{
+let source = r#"
+   [
+       "string",
+       1,
+       3.0,
+       false,
+       {"test": "test", "obj": {"test2": "test"}},
+       [1]
+   ]"#;
+let target = r#"
+   [
+       "string",
+       3.0,
+       3.0,
+       false,
+       {"test": "test2", "obj": {"test2": "test2"}},
+       1,
+       [1]
+   ]"#;
+
+let s = Value::from_str(source)?.as_array().unwrap();
+let t = Value::from_str(target)?.as_array().unwrap();
+
+assert_eq!(t, apply_array(&s, &diff_array(&s, &t))?);
+#   Ok(())
+# }
+```
+*/
 pub fn diff_array(source: &Array, target: &Array) -> Array {
     diff(&Value::Array(source.clone()), &Value::Array(target.clone()))
 }
 
-/// Generates a JSON patch that, when applied to the source, yields the target.
-/// ```rust
-/// # use immutable_json::api::Value;
-/// # use immutable_json::error::Error;
-/// # use immutable_json::patch::apply_object;
-/// # use immutable_json::patch::diff_object;
-/// # use std::str::FromStr;
-/// # fn main() -> Result<(), Error>{
-///let source = r#"
-///    {
-///        "string": "string",
-///        "int": 43,
-///        "float": 5.8,
-///        "boolean": true,
-///        "object": {"test": "test", "obj": {"test2": "test"}},
-///        "array": [
-///            "string",
-///            1,
-///            3.0,
-///            false,
-///            {"test": "test", "obj": {"test2": "test"}},
-///            [1]
-///        ]
-///    }"#;
-///let target = r#"
-///    {
-///        "string": "string",
-///        "int": 44,
-///        "boolean": false,
-///        "object": {"test": "test"},
-///        "array": [
-///            "string",
-///            3.0,
-///            3.0,
-///            false,
-///            {"test": "test2", "obj": {"test2": "test2"}},
-///            1,
-///            [1]
-///        ],
-///        "float": 5.8
-///    }"#;
-///
-///let s = Value::from_str(source)?.as_object().unwrap();
-///let t = Value::from_str(target)?.as_object().unwrap();
-///
-///assert_eq!(t, apply_object(&s, &diff_object(&s, &t))?);
-/// #   Ok(())
-/// # }
-/// ```
+/**
+Generates a JSON patch that, when applied to the source, yields the target.
+```rust
+# use immutable_json::api::Value;
+# use immutable_json::error::Error;
+# use immutable_json::patch::apply_object;
+# use immutable_json::patch::diff_object;
+# use std::str::FromStr;
+# fn main() -> Result<(), Error>{
+let source = r#"
+   {
+       "string": "string",
+       "int": 43,
+       "float": 5.8,
+       "boolean": true,
+       "object": {"test": "test", "obj": {"test2": "test"}},
+       "array": [
+           "string",
+           1,
+           3.0,
+           false,
+           {"test": "test", "obj": {"test2": "test"}},
+           [1]
+       ]
+   }"#;
+let target = r#"
+   {
+       "string": "string",
+       "int": 44,
+       "boolean": false,
+       "object": {"test": "test"},
+       "array": [
+           "string",
+           3.0,
+           3.0,
+           false,
+           {"test": "test2", "obj": {"test2": "test2"}},
+           1,
+           [1]
+       ],
+       "float": 5.8
+   }"#;
+
+let s = Value::from_str(source)?.as_object().unwrap();
+let t = Value::from_str(target)?.as_object().unwrap();
+
+assert_eq!(t, apply_object(&s, &diff_object(&s, &t))?);
+#   Ok(())
+# }
+```
+*/
 pub fn diff_object(source: &Object, target: &Object) -> Array {
     diff(
         &Value::Object(source.clone()),
@@ -175,7 +179,7 @@ fn get_path(object: &Object, field: &str) -> Option<PointerBuf> {
 }
 
 fn get_value(object: &Object) -> Option<serde_json::Value> {
-    object.get("value").and_then(|v| to_value(v))
+    object.get("value").and_then(to_value)
 }
 
 fn move_operation(object: &Object) -> Option<PatchOperation> {
@@ -228,7 +232,7 @@ fn patch_operation_to_object(op: &PatchOperation) -> Object {
 fn patch_to_array(patch: &Patch) -> Array {
     patch
         .iter()
-        .map(|op| patch_operation_to_object(op))
+        .map(patch_operation_to_object)
         .fold(Array::new(), |a, o| a.add_object(&o))
 }
 

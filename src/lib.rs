@@ -6,6 +6,8 @@
 //! The crate feature `jaq` enables the transformation of JSON with the
 //! [jq language](https://jqlang.org). It is powered by the
 //! [jaq engine](https://github.com/01mf02/jaq).
+//!
+//! The crate feature `patch` enables working with JSON patches. It uses the `json-patch` crate.
 pub mod api;
 pub mod array;
 pub mod error;
@@ -16,4 +18,3 @@ pub mod object;
 pub mod patch;
 pub mod pointer;
 pub mod serde;
-mod util;
