@@ -40,8 +40,8 @@ pub enum Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Error::ConvertFrom => write!(f, "cannot convert from serde_json or jaq_json"),
-            Error::ConvertTo => write!(f, "cannot convert to serde_json or jaq_json"),
+            Error::ConvertFrom => write!(f, "cannot convert from serde_json, jaq_json or BSON"),
+            Error::ConvertTo => write!(f, "cannot convert to serde_json, jaq_json or BSON"),
             #[cfg(feature = "jaq")]
             Error::JaqCompile(s) => write!(f, "jaq compilation error: {}", s),
             #[cfg(feature = "jaq")]

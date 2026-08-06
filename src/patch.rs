@@ -1,3 +1,5 @@
+//! This module requires the `patch` crate feature.
+
 use crate::api::Value;
 use crate::array::Array;
 use crate::error::JsonPatchError;

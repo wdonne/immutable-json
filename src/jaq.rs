@@ -113,10 +113,10 @@ fn from_number(value: &Num) -> Option<Number> {
 
 /// Convert a jaq_json object to an immutable JSON object.
 fn from_object(object: &Map<Val, Val>) -> Object {
-    Object::from_iter(object.into_iter().filter_map(|e| {
-        from_value(e.1).map(|v| {
+    Object::from_iter(object.into_iter().filter_map(|(k, v)| {
+        from_value(v).map(|v| {
             (
-                from_value(e.0)
+                from_value(k)
                     .and_then(|v| v.as_string())
                     .unwrap_or("".to_string()),
                 v,
@@ -187,7 +187,7 @@ fn to_object(object: &Object) -> Map<Val, Val> {
     Map::from_iter(
         object
             .iter()
-            .map(|e| (to_value(&Value::String(e.0)), to_value(&e.1))),
+            .map(|(k, v)| (to_value(&Value::String(k)), to_value(&v))),
     )
 }
 

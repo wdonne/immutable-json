@@ -20,7 +20,7 @@ fn from_object(object: &serde_json::Map<String, serde_json::Value>) -> Object {
     Object::from_iter(
         object
             .into_iter()
-            .filter_map(|e| from_value(e.1).map(|v| (e.0.clone(), v))),
+            .filter_map(|(k, v)| from_value(v).map(|v| (k.clone(), v))),
     )
 }
 
@@ -84,7 +84,7 @@ fn to_object(object: &Object) -> serde_json::Map<String, serde_json::Value> {
     serde_json::Map::from_iter(
         object
             .iter()
-            .filter_map(|e| to_value(&e.1).map(|v| (e.0, v))),
+            .filter_map(|(k, v)| to_value(&v).map(|v| (k, v))),
     )
 }
 

@@ -8,8 +8,12 @@
 //! [jaq engine](https://github.com/01mf02/jaq).
 //!
 //! The crate feature `patch` enables working with JSON patches. It uses the `json-patch` crate.
+//! 
+//! The crate feature `bson` provides conversions from and to the BSON format.
 pub mod api;
 pub mod array;
+#[cfg(feature = "bson")]
+pub mod bson;
 pub mod error;
 #[cfg(feature = "jaq")]
 pub mod jaq;
