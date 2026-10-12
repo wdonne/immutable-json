@@ -10,10 +10,14 @@
 //! The crate feature `patch` enables working with JSON patches. It uses the `json-patch` crate.
 //! 
 //! The crate feature `bson` provides conversions from and to the BSON format.
+//! 
+//! The crate feature `config` has a conversion from `Config`.
 pub mod api;
 pub mod array;
 #[cfg(feature = "bson")]
 pub mod bson;
+#[cfg(feature = "config")]
+pub mod config;
 pub mod error;
 #[cfg(feature = "jaq")]
 pub mod jaq;
@@ -21,4 +25,5 @@ pub mod object;
 #[cfg(feature = "patch")]
 pub mod patch;
 pub mod pointer;
+pub mod replace;
 pub mod serde;
