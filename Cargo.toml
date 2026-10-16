@@ -8,7 +8,7 @@ license = "BSD-2-Clause"
 name = "immutable-json"
 readme = "README.md"
 repository = "https://github.com/wdonne/immutable-json"
-version = "1.4.0"
+version = "1.4.1"
 
 [dependencies]
 bson = { version = "3.1.0", optional = true, features = ["chrono-0_4"] }
@@ -29,3 +29,6 @@ bson = ["dep:bson", "dep:chrono"]
 config = ["dep:config"]
 jaq = ["dep:bytes", "dep:jaq-core", "dep:jaq-json", "dep:jaq-std"]
 patch = ["dep:json-patch"]
+
+[package.metadata.docs.rs]
+all-features = true
