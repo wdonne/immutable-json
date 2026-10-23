@@ -12,6 +12,8 @@
 //! The crate feature `bson` provides conversions from and to the BSON format.
 //! 
 //! The crate feature `config` has a conversion from `Config`.
+//! 
+//! The crate feature `yaml` provides conversions from and to the YAML format.
 pub mod api;
 pub mod array;
 #[cfg(feature = "bson")]
@@ -27,3 +29,5 @@ pub mod patch;
 pub mod pointer;
 pub mod replace;
 pub mod serde;
+#[cfg(feature = "yaml")]
+pub mod yaml;
